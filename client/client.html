@@ -5,6 +5,96 @@
   <link rel="stylesheet" type="text/css" href="/style.css">
   
   <script>
+    const handleResponse = (response) => {
+      response.text().then((resText) => {
+        // prints the raw xml/json before parsing
+        console.log(resText);
+        const contentType = response.headers.get('Content-Type');
+
+        const content = document.querySelector('#content');
+        content.innerHTML = '';
+        content.appendChild(document.createElement('hr'));
+
+        const h1 = document.createElement('h1');
+        const p = document.createElement('p');
+
+        
+        switch(response.status) {
+          case 200: //Success
+            h1.textContent = `Success`;
+            break;
+          case 400: //Bad Request
+             h1.textContent = `Bad Request`;
+            break;
+          case 401: // unauthorized
+             h1.textContent = `Unauthorized`;
+            break;
+          case 403: // forbidden
+             h1.textContent = `Forbidden`;
+            break;
+          case 500: // internal
+            h1.textContent = `Internal Server Error`;
+            break;
+          case 501: // not implemented
+            h1.textContent = `Not Implemented`;
+            break;
+          case 404: //Not Found
+            h1.textContent = `Resource Not Found`;
+            break;
+          default: //Anything Else
+            h1.textContent = `Status Code not Implemented By Client`;
+            break;
+        }
+
+        // Parses JSON or XML.
+        if(contentType === 'application/json') {
+          const parsedResponse = JSON.parse(resText);
+          p.textContent = `${parsedResponse.message}`;
+        } else if (contentType === 'text/xml') { 
+          const parsedResponse = new window.DOMParser().parseFromString(resText, 'text/xml');
+          p.textContent = parsedResponse.querySelector('message').textContent;
+
+        }
+
+        content.appendChild(h1);
+        content.appendChild(p);    
+      });
+    };
+
+    // as per init, this should send the correct header when fetching.
+    const sendFetchRequest = (url, acceptedType) => {
+      const options = {
+        method: 'GET',
+        headers: {'Accept': acceptedType},
+      }
+
+      const fetchPromise = fetch(url, options);
+
+      fetchPromise.then((response) => { handleResponse(response) });
+    };
+
+
+    const init = () => {
+      const sendButton = document.querySelector('#send');
+      const pageButton = document.querySelector('#page');
+      const typeButton = document.querySelector('#type');
+      
+      const sendJSON = () => sendFetchRequest(pageButton.value, 'application/json');
+      const sendXML = () => sendFetchRequest(pageButton.value, 'text/xml');
+
+      const sendClicked = () => {
+        if (typeButton.value === "text/xml"){
+          sendXML();
+        } else {
+          sendJSON();
+      
+        }
+      }
+
+      sendButton.addEventListener('click', sendClicked);
+    };
+
+    window.onload = init;
 
   </script>
 </head>
